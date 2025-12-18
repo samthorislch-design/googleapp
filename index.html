@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Demo App</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<h3>Login with Google</h3>
+
+<div id="g_id_onload"
+     data-client_id="你的_GOOGLE_CLIENT_ID"
+     data-callback="onLogin">
+</div>
+
+<input id="msg" placeholder="Enter your message">
+<button onclick="send()">Send</button>
+
+<script>
+let userEmail = "";
+
+function onLogin(response) {
+  const payload = JSON.parse(
+    atob(response.credential.split('.')[1])
+  );
+  userEmail = payload.email;
+  alert("Logged in as: " + userEmail);
+}
+
+function send() {
+  if (!userEmail) { alert("Please login"); return; }
+
+  const fd = new FormData();
+  fd.append("email", userEmail);
+  fd.append("message", document.getElementById("msg").value);
+
+  fetch("https://script.google.com/macros/s/AKfycbx6ecvGkb--ann3ZSoiqIqyh1azbnQEhD0B9HoG9DwXEB0Xi4VR2zSV2r-bQX8Lq6vurQ/exec
+", {  // 替换成你新的 Web App URL
+    method: "POST",
+    body: fd
+  })
+  .then(r => r.text())
+  .then(t => alert(t));
+}
+</script>
+
+</body>
+</html>
