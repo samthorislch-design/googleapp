@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="pageTitle">KeyHome 房产管理系统</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- 1. KeyHome 现代化主题 CSS --- */
+        :root {
+            --keyhome-primary: #0056b3;    /* 深蓝色 (主色调) */
+            --keyhome-accent: #28a745;     /* 绿色 (成功/收入) */
+            --keyhome-danger: #dc3545;     /* 红色 (支出/逾期) */
+            --keyhome-warning: #ffc107;    /* 警告黄色 (待处理) */
+            --keyhome-bg: #f8f9fa;         /* 浅灰背景 */
+            --keyhome-secondary-bg: #e9ecef; /* 次要背景 */
+            --keyhome-card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); /* 柔和阴影 */
+            --keyhome-font: #343a40;       /* 深灰字体 */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--keyhome-bg);
+            color: var(--keyhome-font);
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: var(--keyhome-card-shadow);
+        }
+
+        .card-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            background-color: white;
+            font-weight: 600;
+            color: var(--keyhome-font);
+            padding: 1rem 1.5rem;
+        }
+        
+        /* 修复：确保财务KPI卡片颜色为实色 */
+        .finance-kpi-card-income { background-color: var(--keyhome-accent) !important; color: white !important; }
+        .finance-kpi-card-expense { background-color: var(--keyhome-danger) !important; color: white !important; }
+        .finance-kpi-card-netflow { background-color: var(--keyhome-primary) !important; color: white !important; }
+        .finance-kpi-card-income .card-title,
+        .finance-kpi-card-expense .card-title,
+        .finance-kpi-card-netflow .card-title {
+            color: white !important;
+        }
+
+        /* 导航栏 */
+        .nav-pills .nav-link {
+            color: var(--keyhome-primary);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .nav-pills .nav-link.active,
+        .nav-pills .nav-link:hover {
+            background-color: var(--keyhome-primary);
+            color: white;
+        }
+
+        /* 摘要卡片 */
+        .summary-card-icon {
+            font-size: 2.5rem;
+            opacity: 0.6;
+        }
+        .summary-card-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .trend-indicator {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .text-up { color: var(--keyhome-accent); }
+        .text-down { color: var(--keyhome-danger); }
+
+        /* 物业卡片列表样式 */
+        .property-list-card {
+            cursor: pointer;
+            border-left: 5px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .property-list-card.rented { border-left-color: var(--keyhome-accent); }
+        .property-list-card.renovation { border-left-color: var(--keyhome-warning); }
+        .property-list-card.preparing { border-left-color: var(--keyhome-primary); }
+        
+        .property-list-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--keyhome-card-shadow);
+        }
+        .card-title-status {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .list-group-item {
+            border-color: #eee;
+        }
+        /* 辅助颜色类 */
+        .bg-subtle-primary { background-color: rgba(0, 86, 179, 0.1); }
+        .bg-subtle-accent { background-color: rgba(40, 167, 69, 0.1); }
+        .bg-subtle-danger { background-color: rgba(220, 53, 69, 0.1); }
+        .bg-subtle-warning { background-color: rgba(255, 193, 7, 0.1); }
+        
+        /* 登录页面特定样式 */
+        #login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--keyhome-primary);
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-logo {
+            height: 80px; 
+            width: auto;
+            margin-bottom: 20px;
+            object-fit: contain;
+        }
+        .sortable-th {
+            cursor: pointer;
+            position: relative;
+        }
+        .sortable-th:hover {
+            color: var(--keyhome-primary);
+        }
+        .sort-icon {
+            margin-left: 5px;
+            font-size: 0.7em;
+            color: #ccc;
+        }
+        .sortable-th.sorted .sort-icon {
+            color: var(--keyhome-primary);
+        }
+        
+        /* UPDATED: Summary Doughnut Chart Styling */
+        .small-chart-container {
+            position: relative;
+            height: auto; 
+            display: block; /* Removed flex layout */
+            padding: 10px;
+        }
+        .small-chart-container canvas {
+            /* UPDATED: Increased size for a more professional look */
+            max-height: 180px; 
+            max-width: 180px;
+            margin: 10px auto 0; /* Center the chart */
+            display: block;
+        }
+        .kpi-overlay {
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            z-index: 10;
+        }
+        .kpi-overlay-secondary {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #6c757d;
+        }
+        /* NEW: Styling for the title below the chart (left-align and bold) */
+        .summary-chart-title {
+            font-size: 0.9rem;
+            font-weight: 700; /* Bold */
+            color: var(--keyhome-font) !important; 
+            margin-top: 5px;
+            margin-bottom: 0;
+            padding-left: 5px; 
+            text-align: left !important; /* Left aligned */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-container">
+        <div class="login-box">
+            <div class="text-end mb-3">
+                <button class="btn btn-sm btn-outline-secondary me-2" onclick="setLanguage('zh')">中文</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="setLanguage('en')">English</button>
+            </div>
+            <div class="text-center">
+                <img src="https://via.placeholder.com/80x80?text=Logo" alt="KeyHome Logo" class="login-logo">
+                <h4 class="mb-4 text-primary" data-i18n="loginTitle">系统登录</h4>
+            </div>
+            <div id="login-alert" class="alert alert-danger d-none" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i><span data-i18n="loginError">用户名或密码错误！</span>
+            </div>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="username" class="form-label" data-i18n="usernameLabel">用户名</label>
+                    <input type="text" class="form-control" id="username" value="admin" required>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label" data-i18n="passwordLabel">密码</label>
+                    <input type="password" class="form-control" id="password" value="123456" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" data-i18n="loginButton">登录</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="dashboard-container" class="container-fluid d-none" style="padding-top: 20px;">
+        <div class="row">
+            
+            <div class="col-lg-2 col-md-3 sidebar-nav">
+                <div class="d-flex flex-column align-items-center mb-4 pt-3">
+                    <img src="https://via.placeholder.com/60x60?text=Logo" alt="KeyHome Logo" style="height: 60px; width: auto; object-fit: contain; margin-bottom: 8px;">
+                    <h5 class="m-0 text-primary fw-bold">KeyHome PM System</h5>
+                </div>
+                <ul class="nav nav-pills flex-column mb-auto" id="main-tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="summary-details-tab" data-bs-toggle="tab" href="#summary-details-content" role="tab" aria-controls="summary-details-content" aria-selected="true">
+                            <i class="fas fa-chart-pie me-2"></i><span data-i18n="summaryDetailsTitle">摘要详情</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="sales-summary-tab" data-bs-toggle="tab" href="#sales-summary-content" role="tab" aria-controls="sales-summary-content" aria-selected="false">
+                            <i class="fas fa-chart-line me-2"></i><span data-i18n="salesSummaryTitle">销售概览</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tenants-tab" data-bs-toggle="tab" href="#tenants-content" role="tab" aria-controls="tenants-content" aria-selected="false">
+                            <i class="fas fa-user-friends me-2"></i><span data-i18n="tenantsTitle">租户管理</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="properties-tab" data-bs-toggle="tab" href="#properties-content" role="tab" aria-controls="properties-content" aria-selected="false">
+                            <i class="fas fa-building me-2"></i><span data-i18n="propertyListTitle">物业清单</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="landlords-tab" data-bs-toggle="tab" href="#landlords-content" role="tab" aria-controls="landlords-content" aria-selected="false">
+                            <i class="fas fa-handshake me-2"></i><span data-i18n="landlordsTitle">业主管理</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="finance-status-tab" data-bs-toggle="tab" href="#finance-status-content" role="tab" aria-controls="finance-status-content" aria-selected="false">
+                            <i class="fas fa-funnel-dollar me-2"></i><span data-i18n="financeStatusTitle">财务状态</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="utilities-tab" data-bs-toggle="tab" href="#utilities-content" role="tab" aria-controls="utilities-content" aria-selected="false">
+                            <i class="fas fa-bolt me-2"></i><span data-i18n="utilitiesTitle">水电 以及 杂费</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="maintenance-tab" data-bs-toggle="tab" href="#maintenance-content" role="tab" aria-controls="maintenance-content" aria-selected="false">
+                            <i class="fas fa-tools me-2"></i><span data-i18n="maintenanceTitle">维护与投诉</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="user-management-tab" data-bs-toggle="tab" href="#user-management-content" role="tab" aria-controls="user-management-content" aria-selected="false">
+                            <i class="fas fa-users-cog me-2"></i><span data-i18n="userManagementTitle">用户管理</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <hr>
+                
+                <div class="d-flex flex-column gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-globe me-2"></i> <span id="current-lang-text">中文</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="setLanguage('zh')">中文</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setLanguage('en')">English</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-outline-danger w-100" onclick="logout()">
+                        <i class="fas fa-sign-out-alt me-2"></i> <span data-i18n="logoutButton">登出</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-10 col-md-9">
+                <div class="tab-content" id="main-tab-content">
+
+                    <div class="tab-pane fade show active" id="summary-details-content" role="tabpanel" aria-labelledby="summary-details-tab">
+                        <h1 class="mb-4 text-info" data-i18n="summaryDetailsTitle"><i class="fas fa-chart-pie me-2"></i>摘要详情 (Doughnut Charts)</h1>
+                        <p class="text-muted" data-i18n="summaryDetailsSubtitle">本页展示核心运营指标的圆环图分布。</p>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header"><span data-i18n="newSummaryTitle">运营摘要 (一览)</span></div>
+                            <div class="card-body">
+                                <div class="row g-4">
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-primary" id="kpi-total-tenants">50</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleTotalTenants">总租户数量 (类型)</p>
+                                                <canvas id="chartTotalTenants"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-info" id="kpi-total-landlord-agreements">50</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleLandlordAgreements">业主协议 (类型)</p>
+                                                <canvas id="chartLandlordAgreements"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-warning" id="kpi-total-available-units">8</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleAvailableUnits">空置单元 (地点)</p>
+                                                <canvas id="chartAvailableUnits"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-success" id="kpi-occupancy-rate">96.0%</div> 
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleOccupancyRate">总出租率</p>
+                                                <canvas id="chartOccupancyRate"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-4 mt-1">
+                                     <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-accent" id="kpi-monthly-income">RM 48k</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleMonthlyIncome">月度收入 (已收)</p>
+                                                <canvas id="chartMonthlyIncome"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-danger" id="kpi-monthly-expense">RM 18.5k</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleMonthlyExpense">月度支出 (类型)</p>
+                                                <canvas id="chartMonthlyExpense"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-warning" id="kpi-utility-bill-total">RM 930</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleUtilityBillTotal">总水电杂费账单</p>
+                                                <canvas id="chartUtilityBillTotal"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-primary" id="kpi-utility-received">RM 450</div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleUtilityReceived">水电杂费收款 (本月)</p>
+                                                <canvas id="chartUtilityReceived"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-4 mt-1">
+                                     <div class="col-xl-3 col-md-6 col-sm-12">
+                                        <div class="card border-0">
+                                            <div class="card-body p-2 small-chart-container">
+                                                <div class="kpi-overlay text-secondary" id="kpi-maintenance-total">7 <span class="kpi-overlay-secondary"> (4 Solved)</span></div>
+                                                <p class="summary-chart-title text-muted" data-i18n="chartTitleMaintenanceTickets">维护/投诉工单 (总数/解决)</p>
+                                                <canvas id="chartMaintenanceTickets"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12"></div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12"></div>
+                                    <div class="col-xl-3 col-md-6 col-sm-12"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="sales-summary-content" role="tabpanel" aria-labelledby="sales-summary-tab">
+                        <h1 class="mb-4 text-primary" data-i18n="salesSummaryTitle"><i class="fas fa-chart-bar me-2"></i>销售概览</h1>
+                        
+                        <div class="row g-4 mb-5">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-subtle-primary h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="card-title text-muted mb-1 small" data-i18n="summaryTotalProperties">总物业数量</div>
+                                                <div class="summary-card-value text-primary" id="total-properties-value">50</div>
+                                                <div class="trend-indicator text-up"><i class="fas fa-arrow-up me-1"></i>+2.0% <span data-i18n="YoY">YoY</span></div>
+                                            </div>
+                                            <i class="fas fa-city summary-card-icon text-primary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-subtle-accent h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="card-title text-muted mb-1 small" data-i18n="summaryRentCollected">本月已收租金</div>
+                                                <div class="summary-card-value text-accent" id="rent-collected-value">RM 48,000</div>
+                                                <div class="trend-indicator text-down"><i class="fas fa-arrow-down me-1"></i>-1.5% <span data-i18n="MoM">MoM</span></div>
+                                            </div>
+                                            <i class="fas fa-dollar-sign summary-card-icon text-accent"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-subtle-danger h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="card-title text-muted mb-1 small" data-i18n="summaryVacancyRate">当前空置率</div>
+                                                <div class="summary-card-value text-danger" id="vacancy-rate-value">4.0%</div>
+                                                <div class="trend-indicator text-up"><i class="fas fa-arrow-up me-1"></i>+0.5pp <span data-i18n="MoM">MoM</span></div>
+                                            </div>
+                                            <i class="fas fa-door-open summary-card-icon text-danger"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card bg-subtle-warning h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="card-title text-muted mb-1 small" data-i18n="summaryExpiringLeases">租约即将到期 (30天内)</div>
+                                                <div class="summary-card-value text-warning" id="expiring-leases-value">5</div>
+                                                <div class="trend-indicator text-down"><i class="fas fa-arrow-down me-1"></i>-2 <span data-i18n="YoY">YoY</span></div>
+                                            </div>
+                                            <i class="fas fa-calendar-times summary-card-icon text-warning"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-lg-8">
+                                <div class="card mb-4 chart-card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span data-i18n="annualIncomeTrendTitle"><i class="fas fa-chart-line me-2"></i>收入与支出趋势 (RM)</span>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary active" data-chart-period="M" data-i18n="chartPeriodM">月</button>
+                                            <button type="button" class="btn btn-outline-primary" data-chart-period="Q" data-i18n="chartPeriodQ">季</button>
+                                            <button type="button" class="btn btn-outline-primary" data-chart-period="Y" data-i18n="chartPeriodY">年</button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="chartAnnualIncome" style="height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <div class="card mb-4">
+                                    <div class="card-header" data-i18n="financeDistributionTitle">租金收支分布</div> 
+                                    <div class="card-body d-flex justify-content-center align-items-center" style="height: 350px;">
+                                        <canvas id="chartPropertyStatus"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header bg-danger text-white" data-i18n="urgentActionTitle"><i class="fas fa-exclamation-triangle me-2"></i>紧急行动与提醒</div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div data-i18n="action1">🛠️ P003 (KLCC) 浴室漏水 - **高优先级**工单 M011 待供应商确认。</div>
+                                        <button class="btn btn-sm btn-outline-danger">查看工单</button>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div data-i18n="action2">⚠️ 租户 John Smith (P003) 租金逾期 **5 天** (RM 2,550.00)。</div>
+                                        <button class="btn btn-sm btn-outline-warning">发送提醒</button>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div data-i18n="action3">🔑 P002 (PJ Sentral) 待准备物业，下周需安排看房。</div>
+                                        <button class="btn btn-sm btn-outline-primary">安排日程</button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tenants-content" role="tabpanel" aria-labelledby="tenants-tab">
+                        <h1 class="mb-4 text-accent" data-i18n="tenantsTitle"><i class="fas fa-user-friends me-2"></i>租户管理</h1>
+                        <p class="text-muted" data-i18n="tenantsSubtitle">管理所有租户信息、租约状态和联系方式。租约数量：42。</p>
+
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span data-i18n="activeTenantsList">当前活跃租户列表</span>
+                                <button class="btn btn-sm btn-primary" data-i18n="exportDataButton"><i class="fas fa-download me-1"></i>导出数据</button>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" data-i18n="[placeholder]searchTenantPlaceholder" placeholder="按姓名、物业 ID 或租约状态筛选...">
+                                    <select class="form-select w-auto" id="tenant-status-filter">
+                                        <option value="" data-i18n="filterAll">所有状态</option>
+                                        <option value="active" data-i18n="filterActive">活跃</option>
+                                        <option value="expiring" data-i18n="filterExpiring">即将到期</option>
+                                        <option value="overdue" data-i18n="filterOverdue">租金逾期</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle" id="tenant-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="sortable-th" data-sort-key="tenant" onclick="sortTable('tenant-table', 0)">
+                                                    <span data-i18n="tableHeaderTenant">租户</span> <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                                <th class="sortable-th" data-sort-key="property_id" onclick="sortTable('tenant-table', 1)">
+                                                    <span data-i18n="tableHeaderProperty">物业 ID / 地址</span> <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                                <th class="sortable-th" data-sort-key="rent" data-sort-type="number" onclick="sortTable('tenant-table', 2)">
+                                                    <span data-i18n="tableHeaderRent">月租 (RM)</span> <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                                <th data-i18n="tableHeaderPIC">Appointed PIC</th>
+                                                <th data-i18n="tableHeaderTenantRemark">备注</th>
+                                                <th data-i18n="tableHeaderReferAgent">介绍代理</th>
+                                                <th data-i18n="tableHeaderAgentContact">代理联系</th>
+                                                <th data-i18n="tableHeaderAgentCompany">代理公司</th>
+                                                <th class="sortable-th" data-sort-key="lease_end" data-sort-type="date" onclick="sortTable('tenant-table', 8)">
+                                                    <span data-i18n="tableHeaderLeaseEnd">租约到期日</span> <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                                <th class="sortable-th" data-sort-key="status" onclick="sortTable('tenant-table', 9)">
+                                                    <span data-i18n="tableHeaderStatus">状态</span> <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                                <th data-i18n="tableHeaderActions">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr data-status="active">
+                                                <td>Jane Doe</td>
+                                                <td>P001 / Laman Cengal</td>
+                                                <td data-sort-value="3000">3,000.00</td>
+                                                <td>Alice (A01)</td> <td>按时缴租</td> <td>Agent A</td> <td>012-1111222</td> <td>Company X</td> <td data-sort-value="2026-03-31">2026-03-31</td>
+                                                <td><span class="badge bg-success" data-i18n="statusActive">活跃</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info me-1" data-i18n="actionEdit">编辑</button>
+                                                    <button class="btn btn-sm btn-outline-primary" data-i18n="actionContact">联系</button>
+                                                </td>
+                                            </tr>
+                                            <tr data-status="overdue">
+                                                <td>John Smith</td>
+                                                <td>P003 / Taman Impian</td>
+                                                <td data-sort-value="2550">2,550.00</td>
+                                                <td>Bob (B02)</td> <td class="text-danger">经常迟交</td> <td>N/A</td> <td>N/A</td> <td>N/A</td> <td data-sort-value="2026-01-31">2026-01-31</td>
+                                                <td><span class="badge bg-danger" data-i18n="statusOverdue">逾期 (5天)</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info me-1" data-i18n="actionEdit">编辑</button>
+                                                    <button class="btn btn-sm btn-danger" data-i18n="actionCollect">收租</button>
+                                                </td>
+                                            </tr>
+                                            <tr data-status="expiring">
+                                                <td>Ahmad Bin Kassim</td>
+                                                <td>P015 / Sentral Tower</td>
+                                                <td data-sort-value="4500">4,500.00</td>
+                                                <td>Alice (A01)</td> <td>有续约意向</td> <td>Agent C</td> <td>017-3334444</td> <td>Company Z</td> <td data-sort-value="2026-02-28">2026-02-28</td>
+                                                <td><span class="badge bg-warning text-dark" data-i18n="statusExpiring">即将到期</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-info me-1" data-i18n="actionEdit">编辑</button>
+                                                    <button class="btn btn-sm btn-outline-warning" data-i18n="actionRenew">续约</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p class="text-end text-muted small mt-2" data-i18n="tableFooterHint">点击表头可进行排序，使用搜索框进行即时筛选。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="properties-content" role="tabpanel" aria-labelledby="properties-tab">
+                        <h1 class="mb-4 text-primary" data-i18n="propertyListTitle"><i class="fas fa-building me-2"></i>物业清单</h1>
+                        <p class="text-muted" data-i18n="propertyListSubtitle">管理所有受托物业的详细信息、状态和相关业主。</p>
+
+                        <div class="d-flex justify-content-between mb-3">
+                            <button class="btn btn-primary" data-i18n="addNewPropertyButton"><i class="fas fa-plus me-1"></i>新增物业</button>
+                            <div class="input-group w-75">
+                                <input type="text" class="form-control" data-i18n="[placeholder]searchPropertyPlaceholder" placeholder="按物业地址或ID搜索...">
+                                <select class="form-select w-auto" id="property-status-filter" onchange="filterPropertyCards()">
+                                    <option value="" data-i18n="filterAll">所有状态</option>
+                                    <option value="rented" data-i18n="statusRented">已租</option>
+                                    <option value="renovation" data-i18n="statusRenovation">装修中</option>
+                                    <option value="preparing" data-i18n="statusPreparing">待准备</option>
+                                </select>
+                                <select class="form-select w-auto" id="property-location-filter" onchange="filterPropertyCards()">
+                                    <option value="" data-i18n="filterAllLocations">所有地点 (分组筛选)</option>
+                                    <option value="KL">KL Sentral</option>
+                                    <option value="PJ">PJ Area</option>
+                                    <option value="Puchong">Puchong</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-4" id="property-cards-container">
+                            <div class="col-md-6 col-lg-4 property-card" data-status="rented" data-location="KL">
+                                <div class="card property-list-card rented shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <h5 class="card-title-status text-success"><i class="fas fa-check-circle me-2"></i><span data-i18n="statusRented">已租</span></h5>
+                                            <span class="badge bg-success">P001</span>
+                                        </div>
+                                        <h6 class="card-subtitle mb-2 text-dark" data-i18n="propAddress1">201 Laman Cengal, KL</h6>
+                                        <ul class="list-unstyled small mt-3">
+                                            <li><i class="fas fa-user-tie me-2 text-muted"></i><strong data-i18n="ownerLabel">业主:</strong> Tan Chee Ming (O001)</li>
+                                            <li><i class="fas fa-user-friends me-2 text-muted"></i><strong data-i18n="tenantLabel">租户:</strong> Jane Doe</li>
+                                            <li><i class="fas fa-ring me-2 text-muted"></i><strong data-i18n="rentDueLabel">下次收租:</strong> 2026-01-01</li>
+                                            <li><i class="fas fa-calendar-times me-2 text-muted"></i><strong data-i18n="leaseExpLabel">租约到期:</strong> 2026-03-31</li>
+                                            <li><i class="fas fa-user me-2 text-muted"></i><strong data-i18n="picLabel">PIC:</strong> Alice (A01)</li>
+                                        </ul>
+                                        <a href="#" class="btn btn-sm btn-outline-info mt-2" data-i18n="actionViewDetails">查看详情</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 property-card" data-status="preparing" data-location="PJ">
+                                <div class="card property-list-card preparing shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <h5 class="card-title-status text-primary"><i class="fas fa-bed me-2"></i><span data-i18n="statusPreparing">待准备</span></h5>
+                                            <span class="badge bg-primary">P002</span>
+                                        </div>
+                                        <h6 class="card-subtitle mb-2 text-dark" data-i18n="propAddress2">A-12-05 Sentral Tower, PJ</h6>
+                                        <ul class="list-unstyled small mt-3">
+                                            <li><i class="fas fa-user-tie me-2 text-muted"></i><strong data-i18n="ownerLabel">业主:</strong> Lim Wei Han (O002)</li>
+                                            <li><i class="fas fa-user-friends me-2 text-danger"></i><strong data-i18n="tenantLabel">租户:</strong> <span data-i18n="noTenant">无租户</span></li>
+                                            <li><i class="fas fa-ring me-2 text-muted"></i><strong data-i18n="rentDueLabel">下次收租:</strong> N/A</li>
+                                            <li><i class="fas fa-calendar-times me-2 text-muted"></i><strong data-i18n="vacantSinceLabel">空置起始:</strong> 2025-11-01</li>
+                                            <li><i class="fas fa-user me-2 text-muted"></i><strong data-i18n="picLabel">PIC:</strong> Bob (B02)</li>
+                                        </ul>
+                                        <a href="#" class="btn btn-sm btn-outline-warning mt-2" data-i18n="actionScheduleViewing">安排看房</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-4 property-card" data-status="renovation" data-location="Puchong">
+                                <div class="card property-list-card renovation shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <h5 class="card-title-status text-warning"><i class="fas fa-hammer me-2"></i><span data-i18n="statusRenovation">装修中</span></h5>
+                                            <span class="badge bg-warning text-dark">P003</span>
+                                        </div>
+                                        <h6 class="card-subtitle mb-2 text-dark" data-i18n="propAddress3">15 Taman Impian, Puchong</h6>
+                                        <ul class="list-unstyled small mt-3">
+                                            <li><i class="fas fa-user-tie me-2 text-muted"></i><strong data-i18n="ownerLabel">业主:</strong> Puan Siti (O003)</li>
+                                            <li><i class="fas fa-user-friends me-2 text-muted"></i><strong data-i18n="tenantLabel">租户:</strong> John Smith</li>
+                                            <li><i class="fas fa-ring me-2 text-danger"></i><strong data-i18n="rentDueLabel">下次收租:</strong> **逾期 5 天**</li>
+                                            <li><i class="fas fa-calendar-times me-2 text-danger"></i><strong data-i18n="leaseExpLabel">租约到期:</strong> **2026-01-31**</li>
+                                            <li><i class="fas fa-user me-2 text-muted"></i><strong data-i18n="picLabel">PIC:</strong> Alice (A01)</li>
+                                        </ul>
+                                        <a href="#" class="btn btn-sm btn-outline-danger mt-2" data-i18n="actionUrgentCall">紧急联系</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="property-sort-trigger" class="d-none"></div>
+
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="landlords-content" role="tabpanel" aria-labelledby="landlords-tab">
+                        <h1 class="mb-4 text-info"><i class="fas fa-handshake me-2"></i><span data-i18n="landlordsTitle">业主管理</span></h1>
+                        <p class="text-muted" data-i18n="landlordsSubtitle">管理所有业主及合作代理的详细信息。</p>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span data-i18n="landlordsList">业主信息列表</span>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-info text-white" data-i18n="addNewLandlordButton"><i class="fas fa-plus me-1"></i>新增业主</button>
+                                    <select class="form-select w-auto" id="landlord-location-filter" onchange="filterLandlordTable()">
+                                        <option value="" data-i18n="filterAllLocations">所有地点 (分组筛选)</option>
+                                        <option value="KL">KL Sentral</option>
+                                        <option value="PJ">PJ Area</option>
+                                        <option value="Puchong">Puchong</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle" id="landlord-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="sortable-th" data-sort-key="owner" onclick="sortTable('landlord-table', 0)"><span data-i18n="tableHeaderOwner">业主姓名</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                <th class="sortable-th" data-sort-key="contact" onclick="sortTable('landlord-table', 1)"><span data-i18n="tableHeaderContact">联系方式</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                <th class="sortable-th" data-sort-key="property_location" onclick="sortTable('landlord-table', 2)"><span data-i18n="tableHeaderLocation">主要物业地点</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                <th class="sortable-th" data-sort-key="unit_no" onclick="sortTable('landlord-table', 3)"><span data-i18n="tableHeaderUnitNo">单元号</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                
+                                                <th data-i18n="tableHeaderPIC">Appointed PIC</th>
+                                                <th data-i18n="tableHeaderLandlordRemark">业主备注</th>
+                                                <th class="sortable-th" data-sort-key="agent" onclick="sortTable('landlord-table', 6)"><span data-i18n="tableHeaderReferAgent">介绍代理</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                <th data-i18n="tableHeaderAgentContact">代理联系</th>
+                                                <th data-i18n="tableHeaderAgentCompany">代理公司</th>
+                                                
+                                                <th class="sortable-th" data-sort-key="agreement_start" data-sort-type="date" onclick="sortTable('landlord-table', 9)"><span data-i18n="tableHeaderAgreementStart">协议起始日</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                
+                                                <th class="sortable-th" data-sort-key="agreement_end" data-sort-type="date" onclick="sortTable('landlord-table', 10)"><span data-i18n="tableHeaderAgreementEnd">协议到期日</span> <i class="fas fa-sort sort-icon"></i></th>
+                                                <th data-i18n="tableHeaderDeposit">押金详情</th>
+                                                <th data-i18n="tableHeaderActions">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr data-location="KL">
+                                                <td>Tan Chee Ming (O001)</td>
+                                                <td>012-3456789</td>
+                                                <td data-sort-value="KL">KL Sentral</td>
+                                                <td>A-10-01</td> <td>Alice (A01)</td> <td>高要求业主</td> <td>Agent A</td>
+                                                <td>012-1111222</td> <td>Company X</td> <td data-sort-value="2024-01-01">2024-01-01</td> <td data-sort-value="2027-12-31">2027-12-31</td>
+                                                <td>3 Months</td>
+                                                <td><button class="btn btn-sm btn-outline-info">详情</button></td>
+                                            </tr>
+                                            <tr data-location="PJ">
+                                                <td>Lim Wei Han (O002)</td>
+                                                <td>016-9876543</td>
+                                                <td data-sort-value="PJ">PJ Area</td>
+                                                <td>A-12-05</td> <td>Bob (B02)</td> <td>只需季报</td> <td>N/A</td>
+                                                <td>N/A</td> <td>N/A</td> <td data-sort-value="2024-07-01">2024-07-01</td> <td data-sort-value="2026-06-30">2026-06-30</td>
+                                                <td>2 Months</td>
+                                                <td><button class="btn btn-sm btn-outline-info">详情</button></td>
+                                            </tr>
+                                            <tr data-location="Puchong">
+                                                <td>Puan Siti (O003)</td>
+                                                <td>019-1122334</td>
+                                                <td data-sort-value="Puchong">Puchong</td>
+                                                <td>15-B Impian</td> <td>Alice (A01)</td> <td>新客户</td> <td>Agent C</td>
+                                                <td>017-3334444</td> <td>Company Z</td> <td data-sort-value="2025-01-15">2025-01-15</td> <td data-sort-value="2028-01-15">2028-01-15</td>
+                                                <td>1 Month</td>
+                                                <td><button class="btn btn-sm btn-outline-info">详情</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="finance-status-content" role="tabpanel" aria-labelledby="finance-status-tab">
+                        <h1 class="mb-4 text-success" data-i18n="financeStatusTitle"><i class="fas fa-funnel-dollar me-2"></i>财务状态</h1>
+                        <p class="text-muted" data-i18n="financeStatusSubtitle">详细查看收入、支出、净现金流和年度预算执行情况。</p>
+                                    
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-4">
+                                <div class="card finance-kpi-card-income"><div class="card-body"><h5 class="card-title" data-i18n="monthlyIncomeTitle">本月收入</h5><p class="card-text summary-card-value">RM 55,000</p></div></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card finance-kpi-card-expense"><div class="card-body"><h5 class="card-title" data-i18n="monthlyExpenseTitle">本月支出</h5><p class="card-text summary-card-value">RM 18,500</p></div></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card finance-kpi-card-netflow"><div class="card-body"><h5 class="card-title" data-i18n="netCashFlowTitle">本月净现金流</h5><p class="card-text summary-card-value">RM 36,500</p></div></div>
+                            </div>
+                        </div>
+                                    
+                        <div class="card mt-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span data-i18n="incomeExpenseTrendTitle"><i class="fas fa-chart-area me-2"></i>收入与支出趋势 (过去 12 个月)</span>
+                                <button class="btn btn-sm btn-outline-success" data-i18n="exportFinancialButton"><i class="fas fa-download me-1"></i>导出财务报表</button>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="chartIncomeExpenseTrend" style="height: 60px;"></canvas>
+                                
+                                <h5 class="mt-4" data-i18n="detailedStatementTitle">详细财务列表</h5>
+                                <p class="text-muted small" data-i18n="statementHint">下方表格包含收入、支出和应收账款（Receivable）的详细交易记录。</p>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th data-i18n="tableHeaderDate">日期</th>
+                                                <th data-i18n="tableHeaderDescription">描述</th>
+                                                <th data-i18n="tableHeaderType">类型</th>
+                                                <th data-i18n="tableHeaderAmount">金额 (RM)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>2025-12-01</td><td>P001 租金</td><td><span class="badge bg-accent">收入</span></td><td>3,000.00</td></tr>
+                                            <tr><td>2025-12-05</td><td>电费 P005</td><td><span class="badge bg-danger">支出</span></td><td>-450.00</td></tr>
+                                            <tr><td>2025-12-10</td><td>P003 租金 (逾期)</td><td><span class="badge bg-warning text-dark">应收</span></td><td>2,550.00</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="utilities-content" role="tabpanel" aria-labelledby="utilities-tab">
+                        <h1 class="mb-4 text-warning"><i class="fas fa-bolt me-2"></i><span data-i18n="utilitiesTitle">水电 以及 杂费</span></h1>
+                        <p class="text-muted" data-i18n="utilitiesSubtitle">管理物业相关的公用事业账单和杂项收支，以及租户应收款项。</p>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span data-i18n="utilitiesBillList">公用事业账单列表</span>
+                                <button class="btn btn-sm btn-warning text-dark" data-i18n="newUtilityBillButton"><i class="fas fa-plus me-1"></i>新增账单</button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th data-i18n="tableHeaderUnitNo">单元号</th>
+                                                <th data-i18n="tableHeaderBillDate">日期</th>
+                                                <th data-i18n="tableHeaderCategory">类别</th>
+                                                <th data-i18n="tableHeaderSupplierBill">供应商账单 (RM)</th>
+                                                <th data-i18n="tableHeaderTenantBill">租户账单 (RM)</th>
+                                                <th data-i18n="tableHeaderStatus">状态</th>
+                                                <th data-i18n="tableHeaderActions">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>P001 (A-10-01)</td>
+                                                <td>2025-12-05</td>
+                                                <td data-i18n="categoryElectric">电费</td>
+                                                <td>-450.00</td>
+                                                <td>450.00</td>
+                                                <td><span class="badge bg-success" data-i18n="statusPaid">已付</span></td>
+                                                <td><button class="btn btn-sm btn-outline-info" data-i18n="actionEdit">编辑</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>P003 (15 Impian)</td>
+                                                <td>2025-12-10</td>
+                                                <td data-i18n="categoryWater">水费</td>
+                                                <td>-80.00</td>
+                                                <td>80.00</td>
+                                                <td><span class="badge bg-danger" data-i18n="statusUnpaid">未付</span></td>
+                                                <td><button class="btn btn-sm btn-danger" data-i18n="actionCollect">催收</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>P002 (A-12-05)</td>
+                                                <td>2025-11-20</td>
+                                                <td data-i18n="categoryMis">杂项 (钥匙复制)</td>
+                                                <td>-50.00</td>
+                                                <td>0.00</td>
+                                                <td><span class="badge bg-info" data-i18n="statusInternal">内部支出</span></td>
+                                                <td><button class="btn btn-sm btn-outline-info" data-i18n="actionEdit">编辑</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header"><span data-i18n="receivablesTitle">租户应收款与收款状态</span></div>
+                            <div class="card-body">
+                                <h5 class="mb-3" data-i18n="receivablesTableTitle">收款详情</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th data-i18n="tableHeaderUnitNo">单元号</th>
+                                                <th data-i18n="tableHeaderTenant">租户</th>
+                                                <th data-i18n="tableHeaderReceivableTotal">应收总额 (RM)</th>
+                                                <th data-i18n="tableHeaderReceivedAmount">已收金额 (RM)</th>
+                                                <th data-i18n="tableHeaderPaymentMethod">收款方式</th>
+                                                <th data-i18n="tableHeaderPaymentRemark">收款备注</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>P003 (15 Impian)</td>
+                                                <td>John Smith</td>
+                                                <td>2,630.00 (Rent + Water)</td>
+                                                <td>0.00</td>
+                                                <td><span class="badge bg-danger" data-i18n="statusUnpaid">未收</span></td>
+                                                <td><button class="btn btn-sm btn-danger">逾期催收</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>P001 (A-10-01)</td>
+                                                <td>Jane Doe</td>
+                                                <td>3,450.00 (Rent + Electric)</td>
+                                                <td>3,450.00</td>
+                                                <td><span class="badge bg-primary" data-i18n="paymentBank">银行转账</span></td>
+                                                <td data-i18n="remarkBankTransfer">12月租金已清算</td>
+                                            </tr>
+                                            <tr>
+                                                <td>P015 (Sentral Tower)</td>
+                                                <td>Ahmad Bin Kassim</td>
+                                                <td>4,500.00 (Rent)</td>
+                                                <td>4,500.00</td>
+                                                <td><span class="badge bg-success" data-i18n="paymentTNG">Touch N Go</span></td>
+                                                <td data-i18n="remarkTNG">通过代理TNG支付</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="tab-pane fade" id="maintenance-content" role="tabpanel" aria-labelledby="maintenance-tab">
+                        <h1 class="mb-4 text-warning" data-i18n="maintenanceTitle"><i class="fas fa-tools me-2"></i>维护与投诉</h1>
+                        <p class="text-muted" data-i18n="maintenanceSubtitle">跟踪所有维护和修理请求的状态和进度。</p>
+                        
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span data-i18n="openTicketsList">开放工单列表 (共 7 个)</span>
+                                <button class="btn btn-sm btn-warning text-dark" data-i18n="newTicketButton" onclick="alert('新增工单功能')"><i class="fas fa-plus me-1"></i>创建新工单</button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th data-i18n="ticketID">ID</th>
+                                                <th data-i18n="ticketProperty">物业</th>
+                                                <th data-i18n="ticketIssue">问题</th>
+                                                <th data-i18n="ticketPriority">优先级</th>
+                                                <th data-i18n="ticketStatus">状态</th>
+                                                <th data-i18n="ticketCreated">创建时间</th>
+                                                <th data-i18n="ticketActions">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="table-danger">
+                                                <td>M011</td>
+                                                <td>P003</td>
+                                                <td data-i18n="issueLeak">浴室漏水</td>
+                                                <td><span class="badge bg-danger" data-i18n="priorityHigh">高</span></td>
+                                                <td><span class="badge bg-warning text-dark" data-i18n="statusPending">待确认</span></td>
+                                                <td>2025-12-10</td>
+                                                <td><button class="btn btn-sm btn-outline-danger">详情</button></td>
+                                            </tr>
+                                            <tr class="table-warning">
+                                                <td>M012</td>
+                                                <td>P020</td>
+                                                <td data-i18n="issueAC">空调不制冷</td>
+                                                <td><span class="badge bg-warning text-dark" data-i18n="priorityMedium">中</span></td>
+                                                <td><span class="badge bg-info" data-i18n="statusAssigned">已分配</span></td>
+                                                <td>2025-12-15</td>
+                                                <td><button class="btn btn-sm btn-outline-info">跟踪</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>M013</td>
+                                                <td>P001</td>
+                                                <td data-i18n="issueDoor">卧室门锁松动</td>
+                                                <td><span class="badge bg-success" data-i18n="priorityLow">低</span></td>
+                                                <td><span class="badge bg-success" data-i18n="statusResolved">已解决</span></td>
+                                                <td>2025-12-05</td>
+                                                <td><button class="btn btn-sm btn-outline-secondary">存档</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="user-management-content" role="tabpanel" aria-labelledby="user-management-tab">
+                        <h1 class="mb-4 text-secondary"><i class="fas fa-users-cog me-2"></i><span data-i18n="userManagementTitle">用户管理</span></h1>
+                        <p class="text-muted" data-i18n="userManagementSubtitle">管理系统用户及授权级别。管理员拥有添加用户权限。</p>
+                        
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span data-i18n="userList">系统用户列表</span>
+                                <button class="btn btn-sm btn-secondary" data-i18n="addNewUserButton" onclick="alert('新增用户功能 (仅限管理员)')"><i class="fas fa-user-plus me-1"></i>新增用户 (Admin)</button>
+                            </div>
+                            <div class="card-body p-3">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th data-i18n="tableHeaderUser">用户名</th>
+                                                <th data-i18n="tableHeaderUserRole">角色/权限</th>
+                                                <th data-i18n="tableHeaderUserEmail">邮箱</th>
+                                                <th data-i18n="tableHeaderActions">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>admin</td>
+                                                <td><span class="badge bg-danger" data-i18n="roleAdmin">超级管理员 (Admin)</span></td>
+                                                <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b9d8ddd4d0d7f9d2dcc0d1d6d4dc97dad6d4">[email&#160;protected]</a></td>
+                                                <td><button class="btn btn-sm btn-outline-danger" data-i18n="actionResetPW">重置密码</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>staff_a</td>
+                                                <td><span class="badge bg-primary" data-i18n="roleStaff">员工 (Staff)</span></td>
+                                                <td><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3b484f5a5d5d645a7b505e425354565e15585456">[email&#160;protected]</a></td>
+                                                <td><button class="btn btn-sm btn-outline-secondary" data-i18n="actionEdit">编辑</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // --- 模拟数据源 ---
+        const salesData = {
+            totalProperties: 50,
+            // UPDATED: Vacant units increased to 8, Rented decreased to 42
+            occupied: 42, 
+            vacant: 8, 
+            rentCollected: 48000,
+            totalMonthlyRentTarget: 50000, 
+            rentOverdue: 2550, 
+            expiringLeases: 5,
+            
+            // 趋势数据 (月度/季度/年度) - 以千 RM 计
+            trend: {
+                M: {
+                    labels: ['十月', '十一月', '十二月', '一月', '二月', '三月'],
+                    income: [53, 55, 54, 56, 58, 60], 
+                    expense: [17, 18, 17, 19, 20, 21], 
+                    MoM_Income: 3.45,
+                    // UPDATED: Vacancy trend change to reflect 8 vacant units (from 2)
+                    MoM_Vacancy: 12.0, // (8/50 - 2/50) * 100 = 12%pp
+                },
+                Q: {
+                    labels: ['Q1 2025', 'Q2 2025', 'Q3 2025', 'Q4 2025'],
+                    income: [150, 160, 180, 175],
+                    expense: [45, 48, 55, 52]
+                },
+                Y: {
+                    labels: ['2023', '2024', '2025 (E)'],
+                    income: [500, 620, 750],
+                    expense: [150, 180, 220]
+                }
+            },
+            
+            financeMonths: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+            // Data for line chart (in thousands RM). Kept values reasonable.
+            financeIncome: [60, 62, 65, 68, 72, 75, 78, 80, 75, 78, 80, 85], 
+            financeExpense: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+            
+            // NEW SUMMARY DATA
+            summary: {
+                totalTenants: { 
+                    total: 50, labels: ['住宅 (40)', '商业 (8)'], data: [40, 8], colors: ['#0056b3', '#28a745'] 
+                },
+                landlordAgreements: { 
+                    total: 50, labels: ['1年 (25)', '2年 (15)', '3年+ (10)'], data: [25, 15, 10], colors: ['#007bff', '#17a2b8', '#6c757d'] 
+                },
+                availableUnits: { 
+                    // UPDATED to 8 vacant units, 42 rented
+                    total: 8, labels: ['空置 (8)', '已租 (42)'], data: [8, 42], colors: ['#ffc107', '#28a745'], 
+                    // To show availability by location in tooltip:
+                    location: { KL: 8, PJ: 0, Puchong: 0 } 
+                },
+                occupancyRate: { 
+                    // UPDATED: 42/50 = 84.0%
+                    rate: 84.0, labels: ['已占用 (42)', '空置 (8)'], data: [42, 8], colors: ['#28a745', '#dc3545'] 
+                },
+                monthlyIncome: { 
+                    total: 50000, received: 48000, labels: ['已收 (48k)', '应收 (2k)'], data: [48, 2], colors: ['#28a745', '#ffc107'] 
+                },
+                monthlyExpense: { 
+                    total: 18500, labels: ['维护 (8k)', '管理 (5k)', '其他 (5.5k)'], data: [8, 5, 5.5], colors: ['#dc3545', '#ffc107', '#0056b3'] 
+                },
+                utilityBillTotal: { 
+                    total: 930, labels: ['已付 (850)', '待付 (80)'], data: [850, 80], colors: ['#ffc107', '#dc3545'] 
+                },
+                utilityReceived: { 
+                    received: 450, total: 530, labels: ['已收 (450)', '待收 (80)'], data: [450, 80], colors: ['#0056b3', '#ffc107'] 
+                },
+                maintenanceTickets: { 
+                    total: 7, solved: 4, labels: ['已解决 (4)', '待处理 (3)'], data: [4, 3], colors: ['#28a745', '#dc3545'] 
+                }
+            }
+        };
+
+        // --- 登录/登出逻辑 (Unchanged) ---
+        function checkLogin() {
+            const loggedIn = localStorage.getItem('loggedIn');
+            if (loggedIn === 'true') {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('login-container').classList.remove('d-none');
+            document.getElementById('dashboard-container').classList.add('d-none');
+            document.body.style.padding = '0';
+        }
+
+        function showDashboard() {
+            document.getElementById('login-container').classList.add('d-none');
+            document.getElementById('dashboard-container').classList.remove('d-none');
+            // UPDATED: Default click the Summary Details tab (which is now the active tab in HTML)
+            document.getElementById('summary-details-tab').click(); 
+        }
+
+
+
+        function logout() {
+            localStorage.removeItem('loggedIn');
+            showLogin();
+            // Optional: reset language on logout
+            // setLanguage('zh'); 
+        }
+
+        // --- Chart.js 初始化和控制 ---
+        let charts = {};
+        let currentChartPeriod = 'M'; 
+
+        // General Doughnut Chart function (for Property Status and New Summary Charts)
+        function createDoughnutChart(id, labels, data, colors) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            if (charts[id]) charts[id].destroy();
+            
+            charts[id] = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%', // Make it a doughnut
+                    plugins: {
+                        legend: { 
+                            position: 'bottom', 
+                            labels: { 
+                                boxWidth: 10,
+                                font: { size: 10 }
+                            } 
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.parsed;
+                                    const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                    return `${context.label}: ${value.toLocaleString()} (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createIncomeTrendChart(id, period, currentTranslation) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            if (charts[id]) charts[id].destroy();
+
+            const dataSet = salesData.trend[period];
+            
+            charts[id] = new Chart(ctx.getContext('2d'), {
+                type: 'bar', 
+                data: {
+                    labels: dataSet.labels,
+                    datasets: [
+                        {
+                            label: currentTranslation['chartLabelIncome'],
+                            data: dataSet.income,
+                            backgroundColor: 'rgba(0, 86, 179, 0.7)',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: currentTranslation['chartLabelExpense'],
+                            data: dataSet.expense,
+                            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    // FIX: Set maintainAspectRatio to false and let CSS control height
+                    maintainAspectRatio: false, 
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: currentTranslation['chartLabelAmountThousandsRM'] },
+                            ticks: {
+                                 callback: function(value) { return 'RM ' + value + 'k'; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: RM ${context.parsed.y.toLocaleString()}k`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createFinanceLineChart(id, currentTranslation) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            if(charts[id]) charts[id].destroy();
+
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: salesData.financeMonths,
+                    datasets: [
+                        {
+                            label: currentTranslation['chartLabelTotalIncome'],
+                            data: salesData.financeIncome,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: currentTranslation['chartLabelTotalExpense'],
+                            data: salesData.financeExpense,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    // FIX: Set maintainAspectRatio to false and let CSS control height
+                    maintainAspectRatio: false, 
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            max: 100, // Enforce max value of 100 (100k RM)
+                            title: { display: true, text: currentTranslation['chartLabelAmountThousandsRM'] },
+                            ticks: {
+                                 callback: function(value) { return 'RM ' + value + 'k'; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: RM ${context.parsed.y}k`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawAllCharts(currentTranslation) {
+            if (document.getElementById('dashboard-container').classList.contains('d-none')) return;
+
+            // 1. 更新仪表板摘要卡片 (KPI)
+            // Recalculate vacancy rate based on updated data
+            const vacancyRate = (salesData.vacant / salesData.totalProperties) * 100;
+            document.getElementById('total-properties-value').innerText = salesData.totalProperties;
+            document.getElementById('rent-collected-value').innerText = `RM ${salesData.rentCollected.toLocaleString()}`;
+            // UPDATED VACANCY RATE
+            document.getElementById('vacancy-rate-value').innerText = `${vacancyRate.toFixed(1)}%`;
+            document.getElementById('expiring-leases-value').innerText = salesData.expiringLeases;
+
+            const incomeTrend = salesData.trend.M.MoM_Income;
+            // Use the new, larger vacancy trend number
+            const vacancyTrend = salesData.trend.M.MoM_Vacancy; 
+            
+            const rentTrendEl = document.querySelector('#rent-collected-value').nextElementSibling;
+            rentTrendEl.innerText = `${incomeTrend.toFixed(2)}% ${currentTranslation['MoM']}`;
+            rentTrendEl.className = `trend-indicator ${incomeTrend > 0 ? 'text-up' : 'text-down'}`;
+            rentTrendEl.innerHTML = `<i class="fas fa-arrow-${incomeTrend > 0 ? 'up' : 'down'} me-1"></i>${incomeTrend.toFixed(2)}% <span data-i18n="MoM">${currentTranslation['MoM']}</span>`;
+            
+            const vacancyTrendEl = document.querySelector('#vacancy-rate-value').nextElementSibling;
+            vacancyTrendEl.innerText = `${vacancyTrend}pp ${currentTranslation['MoM']}`;
+            // If trend is positive (vacancy increasing), use danger text
+            vacancyTrendEl.className = `trend-indicator ${vacancyTrend > 0 ? 'text-up text-danger' : 'text-down text-accent'}`; 
+            vacancyTrendEl.innerHTML = `<i class="fas fa-arrow-${vacancyTrend > 0 ? 'up' : 'down'} me-1"></i>${vacancyTrend}pp <span data-i18n="MoM">${currentTranslation['MoM']}</span>`;
+
+
+            // 2. 租金收支分布图 (Doughnut Chart)
+            const rentReceived = salesData.rentCollected;
+            const rentReceivable = salesData.totalMonthlyRentTarget - rentReceived;
+
+            const rentLabels = [currentTranslation['chartLabelReceived'], currentTranslation['chartLabelReceivable']];
+            const rentData = [rentReceived, rentReceivable];
+            const rentColors = ['#28a745', '#ffc107']; 
+            
+            createDoughnutChart('chartPropertyStatus', rentLabels, rentData, rentColors);
+            
+            // 3. 仪表板年度收入趋势 (Bar Chart)
+            createIncomeTrendChart(
+                'chartAnnualIncome', 
+                currentChartPeriod, 
+                currentTranslation
+            );
+
+            // 4. 财务状态 - 收入与支出趋势 (Line Chart)
+            createFinanceLineChart('chartIncomeExpenseTrend', currentTranslation);
+            
+            // 5. NEW: Draw Summary Doughnut Charts
+            const summary = salesData.summary;
+
+            // 5.1 Total Tenants
+            document.getElementById('kpi-total-tenants').innerText = summary.totalTenants.total;
+            createDoughnutChart('chartTotalTenants', summary.totalTenants.labels, summary.totalTenants.data, summary.totalTenants.colors);
+            
+            // 5.2 Landlord Agreements
+            document.getElementById('kpi-total-landlord-agreements').innerText = summary.landlordAgreements.total;
+            createDoughnutChart('chartLandlordAgreements', summary.landlordAgreements.labels, summary.landlordAgreements.data, summary.landlordAgreements.colors);
+
+            // 5.3 Available Units (UPDATED KPI TEXT)
+            document.getElementById('kpi-total-available-units').innerText = summary.availableUnits.total;
+            createDoughnutChart('chartAvailableUnits', summary.availableUnits.labels, summary.availableUnits.data, summary.availableUnits.colors);
+
+            // 5.4 Occupancy Rate (UPDATED KPI TEXT)
+            document.getElementById('kpi-occupancy-rate').innerText = `${summary.occupancyRate.rate.toFixed(1)}%`;
+            createDoughnutChart('chartOccupancyRate', summary.occupancyRate.labels, summary.occupancyRate.data, summary.occupancyRate.colors);
+
+            // 5.5 Monthly Income (using kRM for simplicity on KPI)
+            document.getElementById('kpi-monthly-income').innerText = `RM ${summary.monthlyIncome.received / 1000}k`;
+            createDoughnutChart('chartMonthlyIncome', summary.monthlyIncome.labels, summary.monthlyIncome.data, summary.monthlyIncome.colors);
+
+            // 5.6 Monthly Expense (using kRM for simplicity on KPI)
+            document.getElementById('kpi-monthly-expense').innerText = `RM ${summary.monthlyExpense.total / 1000}k`;
+            createDoughnutChart('chartMonthlyExpense', summary.monthlyExpense.labels, summary.monthlyExpense.data, summary.monthlyExpense.colors);
+
+            // 5.7 Utility Bill Total
+            document.getElementById('kpi-utility-bill-total').innerText = `RM ${summary.utilityBillTotal.total}`;
+            createDoughnutChart('chartUtilityBillTotal', summary.utilityBillTotal.labels, summary.utilityBillTotal.data, summary.utilityBillTotal.colors);
+
+            // 5.8 Utility Received
+            document.getElementById('kpi-utility-received').innerText = `RM ${summary.utilityReceived.received}`;
+            createDoughnutChart('chartUtilityReceived', summary.utilityReceived.labels, summary.utilityReceived.data, summary.utilityReceived.colors);
+
+            // 5.9 Maintenance Tickets
+            document.getElementById('kpi-maintenance-total').innerHTML = `${summary.maintenanceTickets.total} <span class="kpi-overlay-secondary">(${summary.maintenanceTickets.solved} Solved)</span>`;
+            createDoughnutChart('chartMaintenanceTickets', summary.maintenanceTickets.labels, summary.maintenanceTickets.data, summary.maintenanceTickets.colors);
+        }
+
+        // --- 排序功能 (Sorting - Unchanged) ---
+        function sortTable(tableId, columnIndex) {
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const header = table.querySelectorAll('th')[columnIndex];
+            
+            const sortType = header.getAttribute('data-sort-type') || 'string';
+            let sortDirection = header.getAttribute('data-sort-direction') || 'asc';
+            
+            // 清除其他列的排序状态
+            table.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sorted');
+                const icon = th.querySelector('.sort-icon');
+                if (icon) icon.className = 'fas fa-sort sort-icon';
+            });
+            
+            // 切换当前列的排序方向
+            sortDirection = (sortDirection === 'asc') ? 'desc' : 'asc';
+            header.setAttribute('data-sort-direction', sortDirection);
+            header.classList.add('sorted');
+            
+            // 更新排序图标
+            const icon = header.querySelector('.sort-icon');
+            if (icon) icon.className = `fas fa-sort-${sortDirection} sort-icon`;
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.children[columnIndex];
+                const cellB = rowB.children[columnIndex];
+
+                // 优先使用 data-sort-value
+                const valA = cellA.getAttribute('data-sort-value') || cellA.innerText;
+                const valB = cellB.getAttribute('data-sort-value') || cellB.innerText;
+
+                let comparison = 0;
+
+                if (sortType === 'number') {
+                    comparison = parseFloat(valA.replace(/[^0-9.-]+/g, "")) - parseFloat(valB.replace(/[^0-9.-]+/g, ""));
+                } else if (sortType === 'date') {
+                    comparison = new Date(valA) - new Date(valB);
+                } else { // 'string'
+                    comparison = valA.localeCompare(valB, 'zh', { sensitivity: 'base' });
+                }
+
+                return sortDirection === 'asc' ? comparison : -comparison;
+            });
+
+            // 重新渲染表格
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // --- 物业卡片排序/分组/筛选 (Unchanged) ---
+        function filterPropertyCards() {
+            const statusFilter = document.getElementById('property-status-filter').value;
+            const locationFilter = document.getElementById('property-location-filter').value;
+            const container = document.getElementById('property-cards-container');
+            const cards = container.querySelectorAll('.property-card');
+            
+            // 过滤逻辑
+            cards.forEach(card => {
+                const status = card.getAttribute('data-status');
+                const location = card.getAttribute('data-location');
+                
+                const statusMatch = !statusFilter || status === statusFilter;
+                const locationMatch = !locationFilter || location === locationFilter;
+                
+                // Hide/show the parent column element
+                card.parentNode.style.display = (statusMatch && locationMatch) ? 'block' : 'none';
+            });
+        }
+
+        // --- 业主表格分组/筛选 (Unchanged) ---
+        function filterLandlordTable() {
+            const locationFilter = document.getElementById('landlord-location-filter').value;
+            const table = document.getElementById('landlord-table');
+            const rows = table.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                const location = row.getAttribute('data-location');
+                const locationMatch = !locationFilter || location === locationFilter;
+                
+                row.style.display = locationMatch ? '' : 'none';
+            });
+        }
+        
+        // --- 多语言切换数据 (Translations) ---
+        const translations = {
+            'zh': {
+                'pageTitle': 'KeyHome 房产管理系统',
+                'loginTitle': '系统登录',
+                'usernameLabel': '用户名',
+                'passwordLabel': '密码',
+                'loginButton': '登录',
+                'loginError': '用户名或密码错误！',
+                'logoutButton': '登出',
+
+                'salesSummaryTitle': '销售概览',
+                'summaryDetailsTitle': '摘要详情', // NEW TAB TITLE
+                'summaryDetailsSubtitle': '本页展示核心运营指标的圆环图分布。', // NEW SUBTITLE
+                'newSummaryTitle': '运营摘要 (一览)', 
+                'tenantsTitle': '租户管理',
+                'propertyListTitle': '物业清单',
+                'landlordsTitle': '业主管理',
+                'financeStatusTitle': '财务状态',
+                'utilitiesTitle': '水电 以及 杂费', 
+                'utilitiesSubtitle': '管理物业相关的公用事业账单和杂项收支，以及租户应收款项。', 
+                'maintenanceTitle': '维护与投诉',
+                'userManagementTitle': '用户管理',
+                
+                // NEW CHART TITLES
+                'chartTitleTotalTenants': '总租户数量 (类型)',
+                'chartTitleLandlordAgreements': '业主协议 (类型)',
+                'chartTitleAvailableUnits': '空置单元 (地点)',
+                'chartTitleOccupancyRate': '总出租率',
+                'chartTitleMonthlyIncome': '月度收入 (已收)',
+                'chartTitleMonthlyExpense': '月度支出 (类型)',
+                'chartTitleUtilityBillTotal': '总水电杂费账单',
+                'chartTitleUtilityReceived': '水电杂费收款 (本月)',
+                'chartTitleMaintenanceTickets': '维护/投诉工单 (总数/解决)',
+                
+                // 角色
+                'roleAdmin': '超级管理员 (Admin)',
+                'roleStaff': '员工 (Staff)',
+                
+                // KPI
+                'summaryTotalProperties': '总物业数量',
+                'summaryRentCollected': '本月已收租金',
+                'summaryVacancyRate': '当前空置率',
+                'summaryExpiringLeases': '租约即将到期 (30天内)',
+                'MoM': '环比', 'YoY': '同比',
+                
+                // Charts Period 
+                'chartPeriodM': '月',
+                'chartPeriodQ': '季',
+                'chartPeriodY': '年',
+
+                // Charts
+                'annualIncomeTrendTitle': '收入与支出趋势 (RM)',
+                'financeDistributionTitle': '租金收支分布', 
+                'chartLabelIncome': '收入',
+                'chartLabelExpense': '支出',
+                'chartLabelAmountThousandsRM': '金额 (千 RM)',
+                'chartLabelReceived': '已收租金', 
+                'chartLabelReceivable': '待收租金', 
+                'urgentActionTitle': '紧急行动与提醒',
+                'action1': '🛠️ P003 (KLCC) 浴室漏水 - **高优先级**工单 M011 待供应商确认。',
+                'action2': '⚠️ 租户 John Smith (P003) 租金逾期 **5 天** (RM 2,550.00)。',
+                'action3': '🔑 P002 (PJ Sentral) 待准备物业，下周需安排看房。',
+
+                // 租户管理 
+                'tenantsSubtitle': '管理所有租户信息、租约状态和联系方式。租约数量：42。',
+                'activeTenantsList': '当前活跃租户列表',
+                'exportDataButton': '导出数据',
+                '[placeholder]searchTenantPlaceholder': '按姓名、物业 ID 或租约状态筛选...',
+                'filterAll': '所有状态', 'filterActive': '活跃', 'filterExpiring': '即将到期', 'filterOverdue': '租金逾期',
+                'tableHeaderTenant': '租户', 'tableHeaderProperty': '物业 ID / 地址', 'tableHeaderRent': '月租 (RM)', 
+                'tableHeaderPIC': 'Appointed PIC', 
+                'tableHeaderTenantRemark': '备注', 
+                'tableHeaderReferAgent': '介绍代理', 
+                'tableHeaderAgentContact': '代理联系', 
+                'tableHeaderAgentCompany': '代理公司', 
+                'tableHeaderLeaseEnd': '租约到期日', 'tableHeaderStatus': '状态', 'tableHeaderActions': '操作',
+                'statusActive': '活跃', 'statusOverdue': '逾期 (5天)', 'statusExpiring': '即将到期',
+                'actionContact': '联系', 'actionCollect': '收租', 'actionRenew': '续约', 'actionEdit': '编辑', 
+                'tableFooterHint': '点击表头可进行排序，使用搜索框进行即时筛选。',
+                
+                // 物业清单
+                'propertyListSubtitle': '管理所有受托物业的详细信息、状态和相关业主。',
+                'addNewPropertyButton': '新增物业',
+                '[placeholder]searchPropertyPlaceholder': '按物业地址或ID搜索...',
+                'filterAllLocations': '所有地点 (分组筛选)',
+                'statusRented': '已租',
+                'statusRenovation': '装修中',
+                'statusPreparing': '待准备',
+                'ownerLabel': '业主', 'tenantLabel': '租户', 'rentDueLabel': '下次收租', 'leaseExpLabel': '租约到期', 'vacantSinceLabel': '空置起始', 'noTenant': '无租户',
+                'picLabel': 'PIC', 
+                'actionViewDetails': '查看详情', 'actionScheduleViewing': '安排看房', 'actionUrgentCall': '紧急联系',
+                'propAddress1': '201 Laman Cengal, KL', 'propAddress2': 'A-12-05 Sentral Tower, PJ', 'propAddress3': '15 Taman Impian, Puchong',
+
+                // 业主管理 
+                'landlordsSubtitle': '管理所有业主及合作代理的详细信息。',
+                'landlordsList': '业主信息列表',
+                'addNewLandlordButton': '新增业主',
+                'tableHeaderOwner': '业主姓名',
+                'tableHeaderContact': '联系方式',
+                'tableHeaderLocation': '主要物业地点',
+                'tableHeaderUnitNo': '单元号', 
+                'tableHeaderLandlordRemark': '业主备注', 
+                'tableHeaderAgreementStart': '协议起始日', 
+                'tableHeaderAgreementEnd': '协议到期日',
+                'tableHeaderDeposit': '押金详情',
+                
+                // 财务状态
+                'financeStatusSubtitle': '详细查看收入、支出、净现金流和年度预算执行情况。',
+                'monthlyIncomeTitle': '本月收入', 'monthlyExpenseTitle': '本月支出', 'netCashFlowTitle': '本月净现金流',
+                'incomeExpenseTrendTitle': '收入与支出趋势 (过去 12 个月)',
+                'exportFinancialButton': '导出财务报表',
+                'detailedStatementTitle': '详细财务列表',
+                'statementHint': '下方表格包含收入、支出和应收账款（Receivable）的详细交易记录。',
+                'tableHeaderDate': '日期', 'tableHeaderDescription': '描述', 'tableHeaderType': '类型', 'tableHeaderAmount': '金额 (RM)',
+                'chartLabelTotalIncome': '年度总收入', 'chartLabelTotalExpense': '年度总支出',
+
+                // 公用事业 
+                'utilitiesBillList': '公用事业账单列表',
+                'newUtilityBillButton': '新增账单',
+                'tableHeaderSupplierBill': '供应商账单 (RM)',
+                'tableHeaderTenantBill': '租户账单 (RM)',
+                'tableHeaderCategory': '类别',
+                'tableHeaderBillDate': '日期',
+                'categoryElectric': '电费',
+                'categoryWater': '水费',
+                'categoryMis': '杂项 (钥匙复制)',
+                'statusPaid': '已付',
+                'statusUnpaid': '未付',
+                'statusInternal': '内部支出',
+                'actionCollect': '催收',
+
+                // 收款追踪 
+                'receivablesTitle': '租户应收款与收款状态',
+                'receivablesTableTitle': '收款详情',
+                'tableHeaderReceivableTotal': '应收总额 (RM)',
+                'tableHeaderReceivedAmount': '已收金额 (RM)',
+                'tableHeaderPaymentMethod': '收款方式',
+                'tableHeaderPaymentRemark': '收款备注',
+                'paymentBank': '银行转账',
+                'paymentCash': '现金',
+                'paymentTNG': 'Touch N Go',
+                'remarkBankTransfer': '12月租金已清算',
+                'remarkTNG': '通过代理TNG支付',
+                
+                // 维护与投诉
+                'maintenanceSubtitle': '跟踪所有维护和修理请求的状态和进度。',
+                'openTicketsList': '开放工单列表 (共 7 个)', 'newTicketButton': '创建新工单',
+                'ticketID': 'ID', 'ticketProperty': '物业', 'ticketIssue': '问题', 'ticketPriority': '优先级', 'ticketStatus': '状态', 'ticketCreated': '创建时间', 'ticketActions': '操作',
+                'issueLeak': '浴室漏水', 'issueAC': '空调不制冷', 'issueDoor': '卧室门锁松动',
+                'priorityHigh': '高', 'priorityMedium': '中', 'priorityLow': '低',
+                'statusPending': '待确认', 'statusAssigned': '已分配', 'statusResolved': '已解决',
+                
+                // 用户管理
+                'userManagementSubtitle': '管理系统用户及授权级别。管理员拥有添加用户权限。',
+                'userList': '系统用户列表',
+                'addNewUserButton': '新增用户 (Admin)',
+                'tableHeaderUser': '用户名',
+                'tableHeaderUserRole': '角色/权限',
+                'tableHeaderUserEmail': '邮箱',
+                'actionResetPW': '重置密码',
+                'actionEdit': '编辑',
+            },
+            'en': {
+                'pageTitle': 'KeyHome Property Management System',
+                'loginTitle': 'System Login',
+                'usernameLabel': 'Username',
+                'passwordLabel': 'Password',
+                'loginButton': 'Login',
+                'loginError': 'Incorrect username or password!',
+                'logoutButton': 'Logout',
+
+                'salesSummaryTitle': 'Sales Dashboard',
+                'summaryDetailsTitle': 'Summary Details', // NEW TAB TITLE
+                'summaryDetailsSubtitle': 'This page displays doughnut chart distributions for key operational metrics.', // NEW SUBTITLE
+                'newSummaryTitle': 'Operational Summary (At a Glance)', 
+                'tenantsTitle': 'Tenant Management',
+                'propertyListTitle': 'Property List',
+                'landlordsTitle': 'Landlord Management',
+                'financeStatusTitle': 'Financial Status',
+                'utilitiesTitle': 'Utilities & Mis Management', 
+                'utilitiesSubtitle': 'Manage property utility bills, miscellaneous income/expenses, and tenant receivables.',
+                'maintenanceTitle': 'Maintenance & Complaint',
+                'userManagementTitle': 'User Management',
+
+                // NEW CHART TITLES
+                'chartTitleTotalTenants': 'Total Tenants (Type)',
+                'chartTitleLandlordAgreements': 'Landlord Agreements (Type)',
+                'chartTitleAvailableUnits': 'Vacant Units (Location)',
+                'chartTitleOccupancyRate': 'Total Occupancy Rate',
+                'chartTitleMonthlyIncome': 'Monthly Income (Received)',
+                'chartTitleMonthlyExpense': 'Monthly Expense (Type)',
+                'chartTitleUtilityBillTotal': 'Total Utility & Mis Bill',
+                'chartTitleUtilityReceived': 'Utility & Mis Received (MTD)',
+                'chartTitleMaintenanceTickets': 'Maintenance/Complaint Tickets (Total/Solved)',
+
+                'roleAdmin': 'Super Admin (Admin)',
+                'roleStaff': 'Staff',
+                
+                'summaryTotalProperties': 'Total Properties',
+                'summaryRentCollected': 'Rent Collected (MTD)',
+                'summaryVacancyRate': 'Current Vacancy Rate',
+                'summaryExpiringLeases': 'Leases Expiring (30 days)',
+                'MoM': 'MoM', 'YoY': 'YoY',
+
+                // Charts Period 
+                'chartPeriodM': 'M',
+                'chartPeriodQ': 'Q', // Season/Quarter
+                'chartPeriodY': 'Y',
+
+                'annualIncomeTrendTitle': 'Income & Expense Trend (RM)',
+                'financeDistributionTitle': 'Rent Received vs. Receivable',
+                'chartLabelIncome': 'Income', 'chartLabelExpense': 'Expense', 'chartLabelAmountThousandsRM': 'Amount (k RM)',
+                'chartLabelReceived': 'Rent Received', 'chartLabelReceivable': 'Rent Receivable (Outstanding)',
+                'urgentActionTitle': 'Urgent Actions & Alerts',
+                'action1': '🛠️ P003 (KLCC) Bathroom leak - **High Priority** ticket M011 awaiting vendor confirmation.',
+                'action2': '⚠️ Tenant John Smith (P003) Rent is **5 days overdue** (RM 2,550.00).',
+                'action3': '🔑 P002 (PJ Sentral) Preparing property, viewing scheduled next week.',
+                
+                // Tenant Management 
+                'tenantsSubtitle': 'Manage all tenant information, lease status, and contact details. Total Leases: 42.',
+                'activeTenantsList': 'Active Tenants List',
+                'exportDataButton': 'Export Data',
+                '[placeholder]searchTenantPlaceholder': 'Filter by name, property ID, or status...',
+                'filterAll': 'All Statuses', 'filterActive': 'Active', 'filterExpiring': 'Expiring', 'filterOverdue': 'Overdue',
+                'tableHeaderTenant': 'Tenant', 'tableHeaderProperty': 'Property ID / Address', 'tableHeaderRent': 'Monthly Rent (RM)', 
+                'tableHeaderPIC': 'Appointed PIC', 
+                'tableHeaderTenantRemark': 'Remark', 
+                'tableHeaderReferAgent': 'Refer Agent', 
+                'tableHeaderAgentContact': 'Agent Contact', 
+                'tableHeaderAgentCompany': 'Agent Company', 
+                'tableHeaderLeaseEnd': 'Lease End Date', 'tableHeaderStatus': 'Status', 'tableHeaderActions': 'Actions',
+                'statusActive': 'Active', 'statusOverdue': 'Overdue (5 days)', 'statusExpiring': 'Expiring Soon',
+                'actionContact': 'Contact', 'actionCollect': 'Collect Rent', 'actionRenew': 'Renew', 'actionEdit': 'Edit', 
+                'tableFooterHint': 'Click table headers to sort, use search bar for instant filtering.',
+
+                // Property List
+                'propertyListSubtitle': 'Manage details, status, and associated owners for all entrusted properties.',
+                'addNewPropertyButton': 'Add New Property',
+                '[placeholder]searchPropertyPlaceholder': 'Search by address or ID...',
+                'filterAllLocations': 'All Locations (Group Filter)',
+                'statusRented': 'Rented',
+                'statusRenovation': 'Renovation',
+                'statusPreparing': 'Preparing',
+                'ownerLabel': 'Owner', 'tenantLabel': 'Tenant', 'rentDueLabel': 'Next Rent Due', 'leaseExpLabel': 'Lease Expiry', 'vacantSinceLabel': 'Vacant Since', 'noTenant': 'No Tenant',
+                'picLabel': 'PIC', 
+                'actionViewDetails': 'View Details', 'actionScheduleViewing': 'Schedule Viewing', 'actionUrgentCall': 'Urgent Contact',
+                'propAddress1': '201 Laman Cengal, KL', 'propAddress2': 'A-12-05 Sentral Tower, PJ', 'propAddress3': '15 Taman Impian, Puchong',
+
+                // Landlord Management 
+                'landlordsSubtitle': 'Manage details for all landlords and referring agents.',
+                'landlordsList': 'Landlord Information List',
+                'addNewLandlordButton': 'Add New Landlord',
+                'tableHeaderOwner': 'Owner Name',
+                'tableHeaderContact': 'Contact Details',
+                'tableHeaderLocation': 'Main Property Location',
+                'tableHeaderUnitNo': 'Unit Number', 
+                'tableHeaderLandlordRemark': 'Owner Remark',
+                'tableHeaderAgreementStart': 'Agreement Start Date', 
+                'tableHeaderAgreementEnd': 'Agreement End Date',
+                'tableHeaderDeposit': 'Deposit Details',
+                
+                // Financial Status
+                'financeStatusSubtitle': 'View detailed income, expense, net cash flow, and annual budget execution.',
+                'monthlyIncomeTitle': 'Monthly Income', 'monthlyExpenseTitle': 'Monthly Expense', 'netCashFlowTitle': 'Monthly Net Cash Flow',
+                'incomeExpenseTrendTitle': 'Income & Expense Trend (Last 12 Months)',
+                'exportFinancialButton': 'Export Financial Report',
+                'detailedStatementTitle': 'Detailed Financial Statement',
+                'statementHint': 'The table below includes detailed transaction records for Income, Expense, and Receivables.',
+                'tableHeaderDate': 'Date', 'tableHeaderDescription': 'Description', 'tableHeaderType': 'Type', 'tableHeaderAmount': 'Amount (RM)',
+                'chartLabelTotalIncome': 'Total Annual Income', 'chartLabelTotalExpense': 'Total Annual Expense',
+
+                // Utilities 
+                'utilitiesBillList': 'Utility Bills List',
+                'newUtilityBillButton': 'New Bill',
+                'tableHeaderSupplierBill': 'Bill From Supplier (RM)',
+                'tableHeaderTenantBill': 'Bill To Tenant (RM)',
+                'tableHeaderCategory': 'Category',
+                'tableHeaderBillDate': 'Bill Date',
+                'categoryElectric': 'Electricity',
+                'categoryWater': 'Water',
+                'categoryMis': 'Miscellaneous (Key Copy)',
+                'statusPaid': 'Paid',
+                'statusUnpaid': 'Unpaid',
+                'statusInternal': 'Internal Expense',
+                'actionCollect': 'Collect',
+
+                // Receivables Tracking 
+                'receivablesTitle': 'Tenant Receivables and Payment Status',
+                'receivablesTableTitle': 'Payment Details',
+                'tableHeaderReceivableTotal': 'Receivable Total (RM)',
+                'tableHeaderReceivedAmount': 'Received Amount (RM)',
+                'tableHeaderPaymentMethod': 'Payment Method',
+                'tableHeaderPaymentRemark': 'Payment Remark',
+                'paymentBank': 'Bank Transfer',
+                'paymentCash': 'Cash',
+                'paymentTNG': 'Touch N Go',
+                'remarkBankTransfer': 'Dec rent settled',
+                'remarkTNG': 'Paid via Agent TNG',
+                
+                // Maintenance & Complaint
+                'maintenanceSubtitle': 'Track the status and progress of all maintenance and repair requests.',
+                'openTicketsList': 'Open Tickets List (Total 7)', 'newTicketButton': 'Create New Ticket',
+                'ticketID': 'ID', 'ticketProperty': 'Property', 'ticketIssue': 'Issue', 'ticketPriority': 'Priority', 'ticketStatus': 'Status', 'ticketCreated': 'Created On', 'ticketActions': 'Actions',
+                'issueLeak': 'Bathroom Leak', 'issueAC': 'AC Not Cooling', 'issueDoor': 'Bedroom Lock Loose',
+                'priorityHigh': 'High', 'priorityMedium': 'Medium', 'priorityLow': 'Low',
+                'statusPending': 'Pending Confirmation', 'statusAssigned': 'Assigned', 'statusResolved': 'Resolved',
+
+                // User Management
+                'userManagementSubtitle': 'Manage system users and authorization levels. Admins have the right to add users.',
+                'userList': 'System User List',
+                'addNewUserButton': 'Add New User (Admin)',
+                'tableHeaderUser': 'Username',
+                'tableHeaderUserRole': 'Role/Permission',
+                'tableHeaderUserEmail': 'Email',
+                'actionResetPW': 'Reset Password',
+                'actionEdit': 'Edit',
+            }
+        };
+
+        let currentLang = localStorage.getItem('currentLang') || 'zh';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('currentLang', lang); // Save preference
+            document.getElementById('current-lang-text').innerText = lang === 'zh' ? '中文' : 'English';
+            updateContent();
+        }
+
+        function updateContent() {
+            const currentTranslation = translations[currentLang];
+            
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                
+                if (key.startsWith('[placeholder]')) {
+                    const actualKey = key.substring(13); 
+                    if (currentTranslation[actualKey]) {
+                        element.setAttribute('placeholder', currentTranslation[actualKey]);
+                    }
+                } else if (currentTranslation[key]) {
+                    element.innerText = currentTranslation[key];
+                }
+            });
+
+            // Re-draw charts to update labels (only if logged in)
+            if (localStorage.getItem('loggedIn') === 'true') {
+                drawAllCharts(translations[currentLang]);
+            }
+        }
+
+        // --- 事件监听和初始化 ---
+        document.addEventListener('DOMContentLoaded', () => {
+        // Login button click handler
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
+                const alertEl = document.getElementById('login-alert');
+
+                console.log('尝试登录:', username, password);
+                
+                // 客户端认证：admin / 123456
+                if (username === 'admin' && password === '123456') {
+                    console.log('登录成功！');
+                    window.loggedIn = true;
+                    localStorage.setItem('loggedIn', 'true');
+                    alertEl.classList.add('d-none');
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('dashboard-container').style.display = 'block';
+                    showDashboard();
+                } else {
+                    console.log('登录失败：用户名或密码错误');
+                    alertEl.classList.remove('d-none');
+                }
+            });
+        }
+            setLanguage(currentLang);
+            
+            // Check login status and show appropriate interface
+            checkLogin();
+            
+            // Trend chart period switch event listener
+            document.querySelectorAll('[data-chart-period]').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('[data-chart-period]').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    currentChartPeriod = this.getAttribute('data-chart-period');
+                    drawAllCharts(translations[currentLang]);
+                });
+            });
+            
+            // Initial filter for property cards and landlord table
+            filterPropertyC
